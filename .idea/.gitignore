@@ -8,3 +8,16 @@
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+# Скомпільовані класи та збірки Maven
+target/
+*.jar
+*.war
+# Налаштування середовища розробки
+.idea/
+*.iml
+# Логи та тимчасові файли ОС
+*.log
+.DS_Store
+Thumbs.db
+# Файли з секретами (паролі від БД тощо)
+.env
