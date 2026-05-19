@@ -43,4 +43,32 @@ public class MongoDbRepositoryImpl implements StateRepository {
             throw new RuntimeException("Помилка збереження в БД: " + e.getMessage());
         }
     }
+
+    @Override
+    public Map<String, Object> loadLatestState(String formName) {
+        try (MongoClient mongoClient = MongoClients.create(CONNECTION_STRING)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(COLLECTION_NAME);
+
+            // Шукає документи для цієї форми, сортує за спаданням мітки часу savedAt -1 і беремо першу
+            Document lastDoc = collection.find(new Document("formName", formName))
+                    .sort(new Document("savedAt", -1))
+                    .first();
+
+            Map<String, Object> stateMap = new java.util.HashMap<>();
+            if (lastDoc != null && lastDoc.containsKey("uiData")) {
+                Document uiData = (Document) lastDoc.get("uiData");
+
+                // Перенесення даних з BSON-документа у Java Map
+                for (Map.Entry<String, Object> entry : uiData.entrySet()) {
+                    stateMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+            return stateMap;
+
+        } catch (Exception e) {
+            System.err.println("[MongoDB Помилка] Не вдалося завантажити стан: " + e.getMessage());
+            throw new RuntimeException("Помилка зчитування з БД: " + e.getMessage());
+        }
+    }
 }

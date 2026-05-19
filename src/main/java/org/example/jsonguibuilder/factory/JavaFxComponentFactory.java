@@ -23,6 +23,8 @@ public class JavaFxComponentFactory implements UiComponentFactory {
             default -> new Label("Невідомий тип компонента: " + config.type());
         };
 
+        control.setId(config.id()); // Присвоює нативній формі ID з JSON
+
         // Застосування розмірів, якщо вони вказані в JSON
         if (config.width() != null && config.width() > 0) {
             control.setPrefWidth(config.width());
