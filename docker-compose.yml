@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: jsonguibuilder_db
+    restart: always
+    ports:
+      # Прокидає стандартний порт MongoDB на ПК
+      - "27017:27017"
+    environment:
+      # Встановлює базові облікові дані для безпеки
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      # Підключає віртуальний диск, щоб дані не зникали після вимкнення контейнера
+      - mongodb_data:/data/db
+
+# Оголошує постійне сховище Volume
+volumes:
+  mongodb_data:
