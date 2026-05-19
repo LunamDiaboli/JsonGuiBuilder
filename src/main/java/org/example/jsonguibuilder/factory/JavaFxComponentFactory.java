@@ -14,6 +14,7 @@ public class JavaFxComponentFactory implements UiComponentFactory {
 
         // switch повертає значення прямо у змінну control
         Control control = switch (config.type().toLowerCase()) {
+            case "label" -> createLabel(config);
             case "button" -> createButton(config, viewModel);
             case "textfield" -> createTextField(config, viewModel);
             case "combobox" -> createComboBox(config, viewModel);
@@ -31,6 +32,10 @@ public class JavaFxComponentFactory implements UiComponentFactory {
         }
 
         return control;
+    }
+
+    private Label createLabel(ComponentConfig config) {
+        return new Label(config.text());
     }
 
     private Button createButton(ComponentConfig config, MainViewModel viewModel) {
