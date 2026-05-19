@@ -37,6 +37,11 @@ public class MainViewModel {
     // Колбеки для зв'язку з View
     private Consumer<List<Node>> onRenderCallback;
     private Consumer<String> onErrorCallback;
+    private Consumer<Map<String, Object>> onLoadStateCallback;
+
+    public void setOnLoadStateCallback(Consumer<Map<String, Object>> callback) {
+        this.onLoadStateCallback = callback;
+    }
 
     public MainViewModel() {
         this.parserService = new GsonParserServiceImpl();
@@ -118,6 +123,39 @@ public class MainViewModel {
             // Зберігаємо поточний стан uiState у базу
             stateRepository.saveState("DynamicForm_v1", uiState);
             System.out.println("[ViewModel] Дані відправлено до бази.");
+        } catch (Exception e) {
+            if (onErrorCallback != null) {
+                onErrorCallback.accept(e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Завантажує останній стан форми з MongoDB та ініціює оновлення UI.
+     */
+
+    public void loadLatestStateFromDb() {
+        try {
+            // Бере найсвіжіші дані з бази
+            Map<String, Object> latestState = stateRepository.loadLatestState("DynamicForm_v1");
+
+            if (latestState.isEmpty()) {
+                if (onErrorCallback != null) {
+                    onErrorCallback.accept("У базі даних ще немає збережених станів для цієї форми.");
+                }
+                return;
+            }
+
+            // Оновлює поточний стан в оперативній пам'яті ViewModel
+            uiState.clear();
+            uiState.putAll(latestState);
+
+            // Відправляє дані у View для відображення на екрані
+            if (onLoadStateCallback != null) {
+                onLoadStateCallback.accept(latestState);
+            }
+            System.out.println("[ViewModel] Дані успішно відновлено з БД: " + latestState);
+
         } catch (Exception e) {
             if (onErrorCallback != null) {
                 onErrorCallback.accept(e.getMessage());

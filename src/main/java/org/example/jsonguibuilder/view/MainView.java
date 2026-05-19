@@ -14,6 +14,7 @@ import org.example.jsonguibuilder.viewmodel.MainViewModel;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 public class MainView {
 
@@ -30,6 +31,7 @@ public class MainView {
         // вона викличе ці методи у View
         this.viewModel.setOnRenderCallback(this::displayGeneratedUi);
         this.viewModel.setOnErrorCallback(this::displayError);
+        this.viewModel.setOnLoadStateCallback(this::applyStateToUi);
     }
 
     /**
@@ -44,7 +46,9 @@ public class MainView {
         ToolBar toolBar = new ToolBar();
         Button btnLoadFile = new Button("Завантажити JSON");
         Button btnSaveDb = new Button("Зберегти в БД");
-        toolBar.getItems().addAll(btnLoadFile, btnSaveDb);
+        Button btnLoadDb = new Button("Завантажити з БД");
+
+        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb);
         root.setTop(toolBar);
 
         // Центральна панель: місце, де буде малюватися згенерований інтерфейс
@@ -63,6 +67,9 @@ public class MainView {
 
         // Обробка натискання кнопки "Зберегти в БД"
         btnSaveDb.setOnAction(e -> viewModel.saveCurrentState());
+
+        // Обробка натискання кнопки "Завантажити з БД"
+        btnLoadDb.setOnAction(e -> viewModel.loadLatestStateFromDb());
 
         // Налаштування та запуск сцени
         Scene scene = new Scene(root, 600, 500);
@@ -114,5 +121,37 @@ public class MainView {
         alert.setHeaderText("Виявлено проблему в конфігурації");
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Метод-колбек: бере мапу з БД і автоматично заповнює активні елементи форми.
+     */
+
+    private void applyStateToUi(Map<String, Object> state) {
+
+        // Перебирає всі графічні вузли, які зараз лежать у нашому контейнері
+        for (Node node : dynamicUiContainer.getChildren()) {
+            String componentId = node.getId();
+
+            // Якщо у компонента є ID і для цього ID є дані в базі
+            if (componentId != null && state.containsKey(componentId)) {
+                Object value = state.get(componentId);
+
+                // Використовує Pattern Matching для instanceof
+                if (node instanceof TextField tf) {
+                    tf.setText(String.valueOf(value));
+                } else if (node instanceof CheckBox cb) {
+                    cb.setSelected((Boolean) value);
+                } else if (node instanceof RadioButton rb) {
+                    rb.setSelected((Boolean) value);
+                } else if (node instanceof ComboBox<?> comboBox) {
+                    @SuppressWarnings("unchecked")
+                    ComboBox<String> stringCombo = (ComboBox<String>) comboBox;
+                    stringCombo.setValue(String.valueOf(value));
+                }
+            }
+        }
+        statusLabel.setTextFill(Color.GREEN);
+        statusLabel.setText("Стан форми успішно відновлено з MongoDB!");
     }
 }
