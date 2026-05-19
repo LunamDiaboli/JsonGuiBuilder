@@ -6,6 +6,8 @@ import org.example.jsonguibuilder.factory.UiComponentFactory;
 import org.example.jsonguibuilder.model.ComponentConfig;
 import org.example.jsonguibuilder.parser.GsonParserServiceImpl;
 import org.example.jsonguibuilder.parser.JsonParserService;
+import org.example.jsonguibuilder.repository.MongoDbRepositoryImpl;
+import org.example.jsonguibuilder.repository.StateRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,6 +23,10 @@ import java.util.function.Consumer;
  */
 
 public class MainViewModel {
+
+    // Репозиторій
+    private final StateRepository stateRepository;
+
     // Сервіси системи
     private final JsonParserService parserService;
     private final UiComponentFactory uiFactory;
@@ -36,6 +42,7 @@ public class MainViewModel {
         this.parserService = new GsonParserServiceImpl();
         this.uiFactory = new JavaFxComponentFactory();
         this.uiState = new HashMap<>();
+        this.stateRepository = new MongoDbRepositoryImpl();
     }
 
     public void setOnRenderCallback(Consumer<List<Node>> callback) {
@@ -53,13 +60,13 @@ public class MainViewModel {
     // Метод для зчитування файлу
     public void loadAndRenderUi(String filePath) {
         try {
-            // Зчитуємо текст із файлу
+            // Зчитує текст із файлу
             String jsonRaw = Files.readString(Paths.get(filePath));
 
-            // Парсимо JSON в об'єкти (DTO)
+            // Робить парсинг JSON в об'єкти (DTO)
             List<ComponentConfig> componentConfigs = parserService.parseJson(jsonRaw);
 
-            // Очищаємо попередній стан пам'яті
+            // Очищає попередній стан пам'яті
             uiState.clear();
 
             // Фабрика перетворює конфігурації на справжні елементи JavaFX
@@ -69,14 +76,14 @@ public class MainViewModel {
                 generatedNodes.add(node);
             }
 
-            // Передаємо готові вузли назад у вікно
+            // Передає готові вузли назад у вікно
             if (onRenderCallback != null) {
                 onRenderCallback.accept(generatedNodes);
             }
 
         } catch (Exception ex) {
 
-            // Якщо JSON зламаний або файлу немає — викликаємо вікно з помилкою
+            // Якщо JSON зламаний або файлу немає — викликає вікно з помилкою
             if (onErrorCallback != null) {
                 onErrorCallback.accept(ex.getMessage());
             }
@@ -93,5 +100,28 @@ public class MainViewModel {
     public void executeAction(String actionToken, String componentId) {
         System.out.println("[ViewModel - Подія] Натиснуто кнопку '" + componentId + "'. Дія: " + actionToken);
         System.out.println("Поточний стан форми у пам'яті: " + uiState);
+    }
+
+    /**
+     * Викликається при натисканні кнопки "Зберегти в БД".
+     */
+
+    public void saveCurrentState() {
+        if (uiState.isEmpty()) {
+            if (onErrorCallback != null) {
+                onErrorCallback.accept("Немає даних для збереження. Заповніть форму.");
+            }
+            return;
+        }
+        try {
+
+            // Зберігаємо поточний стан uiState у базу
+            stateRepository.saveState("DynamicForm_v1", uiState);
+            System.out.println("[ViewModel] Дані відправлено до бази.");
+        } catch (Exception e) {
+            if (onErrorCallback != null) {
+                onErrorCallback.accept(e.getMessage());
+            }
+        }
     }
 }

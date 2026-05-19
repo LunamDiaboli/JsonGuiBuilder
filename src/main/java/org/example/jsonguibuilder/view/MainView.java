@@ -43,7 +43,7 @@ public class MainView {
         // Верхня панель: кнопки керування
         ToolBar toolBar = new ToolBar();
         Button btnLoadFile = new Button("Завантажити JSON");
-        Button btnSaveDb = new Button("Зберегти в БД (Заглушка)");
+        Button btnSaveDb = new Button("Зберегти в БД");
         toolBar.getItems().addAll(btnLoadFile, btnSaveDb);
         root.setTop(toolBar);
 
@@ -60,6 +60,9 @@ public class MainView {
 
         // Обробка натискання кнопки "Завантажити JSON"
         btnLoadFile.setOnAction(e -> handleOpenFileChooser(stage));
+
+        // Обробка натискання кнопки "Зберегти в БД"
+        btnSaveDb.setOnAction(e -> viewModel.saveCurrentState());
 
         // Налаштування та запуск сцени
         Scene scene = new Scene(root, 600, 500);
