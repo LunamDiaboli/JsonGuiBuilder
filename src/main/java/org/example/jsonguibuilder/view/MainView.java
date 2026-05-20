@@ -51,13 +51,11 @@ public class MainView {
         Button btnLoadFile = new Button("Завантажити JSON");
         Button btnSaveDb = new Button("Зберегти в БД");
         Button btnLoadDb = new Button("Завантажити з БД");
-
-        // Кнопка очищення
+        Button btnExportFile = new Button("Експорт в JSON");
         Button btnClearDb = new Button("Очистити БД");
-        // Задає їй червоний колір
         btnClearDb.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white;");
 
-        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb, btnClearDb);
+        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb, btnExportFile, btnClearDb);
         root.setTop(toolBar);
 
         // Центральна панель: місце, де буде малюватися згенерований інтерфейс
@@ -79,6 +77,9 @@ public class MainView {
 
         // Обробка натискання кнопки "Завантажити з БД"
         btnLoadDb.setOnAction(e -> viewModel.loadLatestStateFromDb());
+
+        // Обробка натискання кнопки "Експорт в JSON"
+        btnExportFile.setOnAction(e -> handleExportFileChooser(stage));
 
         // Обробка натискання кнопки "Очистити БД"
         btnClearDb.setOnAction(e -> handleClearDatabaseRequest());
@@ -111,6 +112,30 @@ public class MainView {
 
             // Передаємо шлях до файлу у ViewModel для парсингу
             viewModel.loadAndRenderUi(selectedFile.getAbsolutePath());
+        }
+    }
+
+    /**
+     * Відкриває системне вікно збереження файлу (Save Dialog).
+     */
+
+    private void handleExportFileChooser(Stage stage) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Оберіть місце для збереження JSON");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+        // Задає дефолтне ім'я файлу, яке користувач побачить відразу
+        fileChooser.setInitialFileName("form_state_export.json");
+
+        // Важливо: використовує showSaveDialog замість showOpenDialog
+        File fileToSave = fileChooser.showSaveDialog(stage);
+
+        if (fileToSave != null) {
+            // Віддає повний шлях до файлу у ViewModel для фізичного запису
+            viewModel.exportStateToJson(fileToSave.getAbsolutePath());
+
+            statusLabel.setTextFill(Color.GREEN);
+            statusLabel.setText("Форму успішно експортовано у файл: " + fileToSave.getName());
         }
     }
 

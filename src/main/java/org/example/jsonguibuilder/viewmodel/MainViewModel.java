@@ -1,5 +1,7 @@
 package org.example.jsonguibuilder.viewmodel;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import org.example.jsonguibuilder.factory.JavaFxComponentFactory;
@@ -266,5 +268,36 @@ public class MainViewModel {
                 });
             }
         });
+    }
+
+    /**
+     * Експорт поточного стану форми у локальний текстовий файл JSON.
+     */
+
+    public void exportStateToJson(String filePath) {
+        if (uiState.isEmpty()) {
+            if (onErrorCallback != null) {
+                onErrorCallback.accept("Немає даних для експорту. Заповніть форму перед збереженням.");
+            }
+            return;
+        }
+
+        try {
+            // Створює окремий екземпляр Gson з увімкненим "Pretty Printing",
+            // щоб згенерований файл було зручно читати людині, а не все в один рядок
+            Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+
+            // Конвертує Java Map зі станом полів у JSON-рядок
+            String jsonString = prettyGson.toJson(uiState);
+
+            // Записує отриманий рядок у обраний користувачем файл
+            Files.writeString(Paths.get(filePath), jsonString);
+            System.out.println("[ViewModel] Дані успішно експортовано у файл: " + filePath);
+
+        } catch (Exception e) {
+            if (onErrorCallback != null) {
+                onErrorCallback.accept("Не вдалося зберегти файл: " + e.getMessage());
+            }
+        }
     }
 }
