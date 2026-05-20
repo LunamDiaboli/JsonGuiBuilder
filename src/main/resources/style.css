@@ -1,0 +1,50 @@
+/* 1. Головне тло вікна та базовий шрифт */
+.root {
+    -fx-background-color: #f8f9fa;
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 14px;
+}
+
+/* 2. Стиль для верхньої панелі інструментів (ToolBar) */
+.tool-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #e0e0e0 transparent;
+    -fx-border-width: 1px;
+    -fx-padding: 10px;
+}
+
+/* 3. Красиві сучасні кнопки */
+.button {
+    -fx-background-color: #007bff;
+    -fx-text-fill: white;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+/* Ефект при наведенні мишки на кнопку */
+.button:hover {
+    -fx-background-color: #0056b3;
+}
+
+/* 4. Стиль для текстових полів введення */
+.text-field {
+    -fx-background-color: white;
+    -fx-border-color: #ced4da;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 8px;
+}
+
+/* Ефект, коли користувач клікає на поле (фокус) */
+.text-field:focused {
+    -fx-border-color: #80bdff;
+    -fx-border-width: 2px;
+    -fx-background-color: #ffffff;
+}
+
+/* 5. Стиль для написів (Label) */
+.label {
+    -fx-text-fill: #333333;
+}

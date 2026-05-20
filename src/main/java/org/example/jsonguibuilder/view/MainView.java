@@ -74,6 +74,11 @@ public class MainView {
 
         // Налаштування та запуск сцени
         Scene scene = new Scene(root, 600, 500);
+
+        // Підключає файл стилів
+        String cssPath = getClass().getResource("/style.css").toExternalForm();
+        scene.getStylesheets().add(cssPath);
+
         stage.setTitle("JSON GUI Builder - Панель розробника");
         stage.setScene(scene);
         stage.show();
