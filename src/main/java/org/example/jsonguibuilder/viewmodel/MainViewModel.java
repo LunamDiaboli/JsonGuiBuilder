@@ -300,4 +300,41 @@ public class MainViewModel {
             }
         }
     }
+
+    /**
+     * Імпорт стану форми з раніше експортованого локального файлу JSON.
+     */
+    public void importStateFromJson(String filePath) {
+        try {
+            // Зчитує сирий текст із файлу
+            String jsonRaw = Files.readString(Paths.get(filePath));
+
+            // Перетворює JSON-рядок назад у Java Map (ID компонента -> Значення)
+            Gson gson = new Gson();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> importedState = gson.fromJson(jsonRaw, HashMap.class);
+
+            if (importedState == null || importedState.isEmpty()) {
+                if (onErrorCallback != null) {
+                    onErrorCallback.accept("Файл імпорту порожній або має некоректний формат.");
+                }
+                return;
+            }
+
+            // Оновлює стан у пам'яті ViewModel
+            uiState.clear();
+            uiState.putAll(importedState);
+
+            // Перевикористовуємо колбек, що існує!
+            if (onLoadStateCallback != null) {
+                onLoadStateCallback.accept(importedState);
+            }
+            System.out.println("[ViewModel] Дані успішно імпортовано з файлу: " + filePath);
+
+        } catch (Exception e) {
+            if (onErrorCallback != null) {
+                onErrorCallback.accept("Не вдалося імпортувати файл стану: " + e.getMessage());
+            }
+        }
+    }
 }

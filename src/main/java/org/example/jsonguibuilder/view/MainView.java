@@ -52,10 +52,11 @@ public class MainView {
         Button btnSaveDb = new Button("Зберегти в БД");
         Button btnLoadDb = new Button("Завантажити з БД");
         Button btnExportFile = new Button("Експорт в JSON");
+        Button btnImportFile = new Button("Імпорт з JSON");
         Button btnClearDb = new Button("Очистити БД");
         btnClearDb.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white;");
 
-        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb, btnExportFile, btnClearDb);
+        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb, btnExportFile, btnImportFile, btnClearDb);
         root.setTop(toolBar);
 
         // Центральна панель: місце, де буде малюватися згенерований інтерфейс
@@ -80,6 +81,9 @@ public class MainView {
 
         // Обробка натискання кнопки "Експорт в JSON"
         btnExportFile.setOnAction(e -> handleExportFileChooser(stage));
+
+        // Обробка натискання кнопки "Імпорт з JSON"
+        btnImportFile.setOnAction(e -> handleImportFileChooser(stage));
 
         // Обробка натискання кнопки "Очистити БД"
         btnClearDb.setOnAction(e -> handleClearDatabaseRequest());
@@ -136,6 +140,26 @@ public class MainView {
 
             statusLabel.setTextFill(Color.GREEN);
             statusLabel.setText("Форму успішно експортовано у файл: " + fileToSave.getName());
+        }
+    }
+
+    /**
+     * Відкриває системне вікно вибору файлу (Open Dialog) для імпорту введених даних.
+     */
+
+    private void handleImportFileChooser(Stage stage) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Оберіть збережений JSON файл стану");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null) {
+
+            // Передає шлях у ViewModel
+            viewModel.importStateFromJson(selectedFile.getAbsolutePath());
+
+            statusLabel.setTextFill(Color.GREEN);
+            statusLabel.setText("Стан форми успішно імпортовано з файлу: " + selectedFile.getName());
         }
     }
 
