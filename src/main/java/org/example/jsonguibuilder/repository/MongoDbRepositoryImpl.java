@@ -76,4 +76,23 @@ public class MongoDbRepositoryImpl implements StateRepository {
             throw new RuntimeException("Помилка зчитування з БД: " + e.getMessage());
         }
     }
+
+    @Override
+    public void clearAllStates(String formName) {
+        try (MongoClient mongoClient = MongoClients.create(CONNECTION_STRING)) {
+            MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+            MongoCollection<Document> collection = database.getCollection(COLLECTION_NAME);
+
+            // Видаляє всі документи, де поле "formName" збігається з нашим (DynamicForm_v1)
+            collection.deleteMany(new Document("formName", formName));
+            System.out.println("[MongoDB] Усі записи для форми " + formName + " успішно видалено.");
+
+        } catch (Exception e) {
+            System.err.println("[MongoDB Помилка] Не вдалося очистити стан: " + e.getMessage());
+            throw new RuntimeException("Не вдалося встановити зв'язок з MongoDB для очищення.\n\n" +
+                    "Переконайся, що:\n" +
+                    "1. Програма Docker Desktop запущена.\n" +
+                    "2. Контейнер 'jsonguibuilder_db' працює.");
+        }
+    }
 }

@@ -35,8 +35,8 @@ public class MainView {
         this.viewModel.setOnRenderCallback(this::displayGeneratedUi);
         this.viewModel.setOnErrorCallback(this::displayError);
         this.viewModel.setOnLoadStateCallback(this::applyStateToUi);
-
         this.viewModel.setOnLoadingCallback(this::toggleLoadingState);
+        this.viewModel.setOnClearSuccessCallback(this::clearUiFields);
     }
 
     /**
@@ -52,7 +52,12 @@ public class MainView {
         Button btnSaveDb = new Button("Зберегти в БД");
         Button btnLoadDb = new Button("Завантажити з БД");
 
-        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb);
+        // Кнопка очищення
+        Button btnClearDb = new Button("Очистити БД");
+        // Задає їй червоний колір
+        btnClearDb.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white;");
+
+        toolBar.getItems().addAll(btnLoadFile, btnSaveDb, btnLoadDb, btnClearDb);
         root.setTop(toolBar);
 
         // Центральна панель: місце, де буде малюватися згенерований інтерфейс
@@ -74,6 +79,9 @@ public class MainView {
 
         // Обробка натискання кнопки "Завантажити з БД"
         btnLoadDb.setOnAction(e -> viewModel.loadLatestStateFromDb());
+
+        // Обробка натискання кнопки "Очистити БД"
+        btnClearDb.setOnAction(e -> handleClearDatabaseRequest());
 
         // Налаштування та запуск сцени
         Scene scene = new Scene(root, 600, 500);
@@ -204,5 +212,45 @@ public class MainView {
                 statusLabel.setText("Операцію успішно завершено!");
             }
         }
+    }
+
+    /**
+     * Запускає діалогове вікно з питанням перед видаленням.
+     */
+
+    private void handleClearDatabaseRequest() {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Підтвердження видалення");
+        confirmAlert.setHeaderText("Ви впевнені, що хочете очистити базу даних?");
+        confirmAlert.setContentText("Усі збережені стани будуть безповоротно видалені з MongoDB. Цю дію неможливо скасувати.");
+
+        // Показує вікно і чекаємо, яку кнопку натисне користувач
+        confirmAlert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+
+                // Якщо натиснуто "ОК" - відправляє команду у ViewModel
+                viewModel.clearDatabase();
+            }
+        });
+    }
+
+    /**
+     * Метод-колбек: фізично прибирає текст і галочки зі згенерованих елементів.
+     */
+
+    private void clearUiFields() {
+        for (Node node : dynamicUiContainer.getChildren()) {
+            if (node instanceof TextField tf) {
+                tf.clear();
+            } else if (node instanceof CheckBox cb) {
+                cb.setSelected(false);
+            } else if (node instanceof RadioButton rb) {
+                rb.setSelected(false);
+            } else if (node instanceof ComboBox<?> comboBox) {
+                comboBox.getSelectionModel().clearSelection();
+            }
+        }
+        statusLabel.setTextFill(Color.GREEN);
+        statusLabel.setText("Базу даних та форму успішно очищено!");
     }
 }

@@ -41,6 +41,11 @@ public class MainViewModel {
     private Consumer<String> onErrorCallback;
     private Consumer<Map<String, Object>> onLoadStateCallback;
     private Consumer<Boolean> onLoadingCallback;
+    private Runnable onClearSuccessCallback;
+
+    public void setOnClearSuccessCallback(Runnable callback) {
+        this.onClearSuccessCallback = callback;
+    }
 
     public void setOnLoadingCallback(Consumer<Boolean> callback) {
         this.onLoadingCallback = callback;
@@ -217,6 +222,43 @@ public class MainViewModel {
                 Platform.runLater(() -> {
 
                     // Вимикає індикатор після успіху
+                    notifyLoading(false);
+                    if (onErrorCallback != null) {
+                        onErrorCallback.accept(e.getMessage());
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * АСИНХРОННЕ очищення бази даних.
+     */
+    public void clearDatabase() {
+        notifyLoading(true);
+        System.out.println("[ViewModel] Даємо команду фоновому потоку на очищення БД...");
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Штучна затримка для плавного відображення індикатора
+                Thread.sleep(1000);
+
+                stateRepository.clearAllStates("DynamicForm_v1");
+
+                Platform.runLater(() -> {
+                    notifyLoading(false);
+                    // Очищаємо локальну пам'ять програми
+                    uiState.clear();
+
+                    // Сповіщаємо вікно, що треба очистити поля на екрані
+                    if (onClearSuccessCallback != null) {
+                        onClearSuccessCallback.run();
+                    }
+                    System.out.println("[Головний потік] Базу та локальний стан очищено.");
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
                     notifyLoading(false);
                     if (onErrorCallback != null) {
                         onErrorCallback.accept(e.getMessage());
