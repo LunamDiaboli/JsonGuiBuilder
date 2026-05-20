@@ -1,5 +1,6 @@
 package org.example.jsonguibuilder.viewmodel;
 
+import javafx.application.Platform;
 import javafx.scene.Node;
 import org.example.jsonguibuilder.factory.JavaFxComponentFactory;
 import org.example.jsonguibuilder.factory.UiComponentFactory;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -108,7 +110,7 @@ public class MainViewModel {
     }
 
     /**
-     * Викликається при натисканні кнопки "Зберегти в БД".
+     * АСИНХРОННЕ збереження стану в MongoDB.
      */
 
     public void saveCurrentState() {
@@ -118,48 +120,71 @@ public class MainViewModel {
             }
             return;
         }
-        try {
 
-            // Зберігаємо поточний стан uiState у базу
-            stateRepository.saveState("DynamicForm_v1", uiState);
-            System.out.println("[ViewModel] Дані відправлено до бази.");
-        } catch (Exception e) {
-            if (onErrorCallback != null) {
-                onErrorCallback.accept(e.getMessage());
+        System.out.println("[ViewModel] Даємо команду фоновому потоку на збереження...");
+
+        // CompletableFuture запускає важку роботу в іншому (фоновому) потоці
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Штучна затримка на 1 секунду для імітації довгої роботи мережі (для тесту)
+                Thread.sleep(1000);
+
+                stateRepository.saveState("DynamicForm_v1", uiState);
+                System.out.println("[Фоновий потік] Дані успішно відправлено до бази.");
+
+            } catch (Exception e) {
+
+                // Якщо сталася помилка (наприклад, БД вимкнена), ми повинні повернутися
+                // в головний потік (Platform.runLater), щоб показати вікно помилки
+                Platform.runLater(() -> {
+                    if (onErrorCallback != null) {
+                        onErrorCallback.accept(e.getMessage());
+                    }
+                });
             }
-        }
+        });
     }
 
     /**
-     * Завантажує останній стан форми з MongoDB та ініціює оновлення UI.
+     * АСИНХРОННЕ завантаження стану форми з MongoDB.
      */
 
     public void loadLatestStateFromDb() {
-        try {
-            // Бере найсвіжіші дані з бази
-            Map<String, Object> latestState = stateRepository.loadLatestState("DynamicForm_v1");
+        System.out.println("[ViewModel] Даємо команду фоновому потоку на завантаження...");
 
-            if (latestState.isEmpty()) {
-                if (onErrorCallback != null) {
-                    onErrorCallback.accept("У базі даних ще немає збережених станів для цієї форми.");
-                }
-                return;
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Штучна затримка на 1 секунду
+                Thread.sleep(1000);
+
+                // Забирає дані
+                Map<String, Object> latestState = stateRepository.loadLatestState("DynamicForm_v1");
+
+                // Коли дані готові, повертаємось до головного потоку, щоб він оновив UI
+                Platform.runLater(() -> {
+                    if (latestState.isEmpty()) {
+                        if (onErrorCallback != null) {
+                            onErrorCallback.accept("У базі даних ще немає збережених станів для цієї форми.");
+                        }
+                        return;
+                    }
+
+                    uiState.clear();
+                    uiState.putAll(latestState);
+
+                    if (onLoadStateCallback != null) {
+                        onLoadStateCallback.accept(latestState);
+                    }
+                    System.out.println("[Головний потік] UI успішно оновлено відновленими даними.");
+                });
+
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    if (onErrorCallback != null) {
+                        onErrorCallback.accept(e.getMessage());
+                    }
+                });
             }
-
-            // Оновлює поточний стан в оперативній пам'яті ViewModel
-            uiState.clear();
-            uiState.putAll(latestState);
-
-            // Відправляє дані у View для відображення на екрані
-            if (onLoadStateCallback != null) {
-                onLoadStateCallback.accept(latestState);
-            }
-            System.out.println("[ViewModel] Дані успішно відновлено з БД: " + latestState);
-
-        } catch (Exception e) {
-            if (onErrorCallback != null) {
-                onErrorCallback.accept(e.getMessage());
-            }
-        }
+        });
     }
 }
