@@ -39,9 +39,14 @@ public class MongoDbRepositoryImpl implements StateRepository {
             System.out.println("[MongoDB] Стан форми успішно збережено в колекцію " + COLLECTION_NAME);
 
         } catch (Exception e) {
-            System.err.println("[MongoDB Помилка] Не вдалося зберегти стан: " + e.getMessage());
-            throw new RuntimeException("Помилка збереження в БД: " + e.getMessage());
-        }
+            System.err.println("[MongoDB Помилка] Деталі: " + e.getMessage());
+
+            // Викидає зрозумілу помилку для користувача
+            throw new RuntimeException("Не вдалося встановити зв'язок з MongoDB.\n\n" +
+                "Переконайтеся, що:\n" +
+                "1. Програма Docker Desktop запущена.\n" +
+                "2. Контейнер 'jsonguibuilder_db' працює (порт 27017).");
+    }
     }
 
     @Override
