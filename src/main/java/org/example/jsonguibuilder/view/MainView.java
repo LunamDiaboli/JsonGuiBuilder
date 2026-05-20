@@ -22,17 +22,21 @@ public class MainView {
     private final MainViewModel viewModel;
     private final VBox dynamicUiContainer;
     private final Label statusLabel;
+    private final BorderPane root;
 
     public MainView(MainViewModel viewModel) {
         this.viewModel = viewModel;
         this.dynamicUiContainer = new VBox(10); // Контейнер для згенерованих елементів (відступ 10px)
         this.statusLabel = new Label("Готово до роботи. Завантажте JSON-файл.");
+        this.root = new BorderPane();
 
         // Підключення слухачів до ViewModel: коли ViewModel згенерує UI або знайде помилку,
         // вона викличе ці методи у View
         this.viewModel.setOnRenderCallback(this::displayGeneratedUi);
         this.viewModel.setOnErrorCallback(this::displayError);
         this.viewModel.setOnLoadStateCallback(this::applyStateToUi);
+
+        this.viewModel.setOnLoadingCallback(this::toggleLoadingState);
     }
 
     /**
@@ -40,7 +44,6 @@ public class MainView {
      */
 
     public void initOwnerWindow(Stage stage) {
-        BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
 
         // Верхня панель: кнопки керування
@@ -171,5 +174,35 @@ public class MainView {
         }
         statusLabel.setTextFill(Color.GREEN);
         statusLabel.setText("Стан форми успішно відновлено з MongoDB!");
+    }
+
+    /**
+     * Метод-колбек: блокує або розблоковує інтерфейс під час фонових операцій.
+     */
+
+    private void toggleLoadingState(boolean isLoading) {
+        // Блокуємо верхню панель (всі кнопки) та форму, щоб користувач нічого не натискав двічі
+        if (root.getTop() != null) {
+            root.getTop().setDisable(isLoading);
+        }
+        dynamicUiContainer.setDisable(isLoading);
+
+        if (isLoading) {
+            // Змінюємо курсор на "годинник" і показуємо текст
+            root.setCursor(javafx.scene.Cursor.WAIT);
+            statusLabel.setTextFill(Color.DARKORANGE);
+            statusLabel.setText("Зв'язок із базою даних... Зачекайте ⏳");
+        } else {
+            // Повертаємо звичайний курсор.
+            // Текст успіху чи помилки буде встановлено іншими методами (displayError або applyStateToUi),
+            // тому тут ми просто скидаємо курсор.
+            root.setCursor(javafx.scene.Cursor.DEFAULT);
+
+            // Якщо це було збереження (і форма не оновлювалася), просто пишемо "Успішно"
+            if (statusLabel.getText().contains("Зачекайте")) {
+                statusLabel.setTextFill(Color.GREEN);
+                statusLabel.setText("Операцію успішно завершено!");
+            }
+        }
     }
 }

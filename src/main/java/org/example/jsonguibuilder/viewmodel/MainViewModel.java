@@ -40,6 +40,11 @@ public class MainViewModel {
     private Consumer<List<Node>> onRenderCallback;
     private Consumer<String> onErrorCallback;
     private Consumer<Map<String, Object>> onLoadStateCallback;
+    private Consumer<Boolean> onLoadingCallback;
+
+    public void setOnLoadingCallback(Consumer<Boolean> callback) {
+        this.onLoadingCallback = callback;
+    }
 
     public void setOnLoadStateCallback(Consumer<Map<String, Object>> callback) {
         this.onLoadStateCallback = callback;
@@ -50,6 +55,14 @@ public class MainViewModel {
         this.uiFactory = new JavaFxComponentFactory();
         this.uiState = new HashMap<>();
         this.stateRepository = new MongoDbRepositoryImpl();
+    }
+
+    // Безпечно передає стан завантаження у головний потік JavaFX.
+
+    private void notifyLoading(boolean isLoading) {
+        if (onLoadingCallback != null) {
+            Platform.runLater(() -> onLoadingCallback.accept(isLoading));
+        }
     }
 
     public void setOnRenderCallback(Consumer<List<Node>> callback) {
@@ -121,6 +134,9 @@ public class MainViewModel {
             return;
         }
 
+        // Вмикає індикатор завантаження
+        notifyLoading(true);
+
         System.out.println("[ViewModel] Даємо команду фоновому потоку на збереження...");
 
         // CompletableFuture запускає важку роботу в іншому (фоновому) потоці
@@ -130,6 +146,17 @@ public class MainViewModel {
                 Thread.sleep(1000);
 
                 stateRepository.saveState("DynamicForm_v1", uiState);
+
+                Platform.runLater(() -> {
+
+                    // Вимикає індикатор після успіху
+                    notifyLoading(false);
+
+                    // Щоб показати повідомлення про успіх, можемо використати onErrorCallback або створити новий.
+                    // Для простоти виведемо в консоль (View сама покаже успіх через statusLabel).
+                    System.out.println("[Головний потік] Збереження успішне.");
+                });
+
                 System.out.println("[Фоновий потік] Дані успішно відправлено до бази.");
 
             } catch (Exception e) {
@@ -137,6 +164,7 @@ public class MainViewModel {
                 // Якщо сталася помилка (наприклад, БД вимкнена), ми повинні повернутися
                 // в головний потік (Platform.runLater), щоб показати вікно помилки
                 Platform.runLater(() -> {
+                    notifyLoading(false);
                     if (onErrorCallback != null) {
                         onErrorCallback.accept(e.getMessage());
                     }
@@ -150,6 +178,10 @@ public class MainViewModel {
      */
 
     public void loadLatestStateFromDb() {
+
+        // Вмикає індикатор завантаження
+        notifyLoading(true);
+
         System.out.println("[ViewModel] Даємо команду фоновому потоку на завантаження...");
 
         CompletableFuture.runAsync(() -> {
@@ -162,6 +194,9 @@ public class MainViewModel {
 
                 // Коли дані готові, повертаємось до головного потоку, щоб він оновив UI
                 Platform.runLater(() -> {
+
+                    // Вимикає індикатор після успіху
+                    notifyLoading(false);
                     if (latestState.isEmpty()) {
                         if (onErrorCallback != null) {
                             onErrorCallback.accept("У базі даних ще немає збережених станів для цієї форми.");
@@ -180,6 +215,9 @@ public class MainViewModel {
 
             } catch (Exception e) {
                 Platform.runLater(() -> {
+
+                    // Вимикає індикатор після успіху
+                    notifyLoading(false);
                     if (onErrorCallback != null) {
                         onErrorCallback.accept(e.getMessage());
                     }
