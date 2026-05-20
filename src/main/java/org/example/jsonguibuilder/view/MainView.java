@@ -6,6 +6,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -109,17 +110,29 @@ public class MainView {
     }
 
     /**
-     * Метод-колбек: показує вікно, що спливає, з помилкою якщо JSON зламаний.
+     * Метод-колбек: динамічно підлаштовує дизайн вікна помилки під конкретну проблему.
      */
 
     private void displayError(String message) {
         statusLabel.setTextFill(Color.RED);
-        statusLabel.setText("Помилка генерації.");
+        statusLabel.setText("Сталася помилка виконання.");
 
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Помилка JSON");
-        alert.setHeaderText("Виявлено проблему в конфігурації");
+
+        // Розумна фільтрація тексту для UX
+        if (message.contains("MongoDB") || message.contains("бази даних")) {
+            alert.setTitle("Помилка інфраструктури (СУБД)");
+            alert.setHeaderText("Відсутнє підключення до бази даних!");
+        } else {
+            alert.setTitle("Помилка конфігурації інтерфейсу");
+            alert.setHeaderText("Виявлено проблему в структурі JSON-файлу");
+        }
+
         alert.setContentText(message);
+
+        // Стилізує внутрішнє текстове поле для кращої читаємості
+        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+
         alert.showAndWait();
     }
 
